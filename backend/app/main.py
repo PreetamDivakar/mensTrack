@@ -178,4 +178,5 @@ def get_phases(
 @app.post("/seed")
 def seed(profile_id: Optional[str] = Query(None), db: Session = Depends(get_db)):
     """Seed the database from the built-in cycle dataset."""
-    return services.seed_cycles_from_csv(db, profile_id)
+    cycles = services.seed_cycles_from_csv(db, profile_id)
+    return {"seeded_cycles": len(cycles)}
