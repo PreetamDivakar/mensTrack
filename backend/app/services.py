@@ -13,7 +13,8 @@ def _get_profile_filter(query, profile_id):
     # Treat the default profile as no filtering (shared data) since the underlying
     # DB column is a UUID and cannot store a placeholder string.
     if profile_id and profile_id != "default":
-        return query.filter(models.Cycle.profile_id == profile_id)
+        # Include shared (NULL) cycles for any profile so seeded history still powers predictions.
+        return query.filter((models.Cycle.profile_id == profile_id) | (models.Cycle.profile_id.is_(None)))
     return query
 
 
