@@ -65,6 +65,8 @@ label {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  width: 100%;
+  padding: 0 18px;
 }
 
 .header__inner > div {
@@ -106,7 +108,7 @@ label {
 
 @media (max-width: 640px) {
   .main {
-    padding-top: 84px;
+    padding-top: 118px;
   }
   .header__inner {
     flex-direction: column;
@@ -176,7 +178,7 @@ body::before {
 
 .main {
   flex: 1;
-  padding-top: 110px;
+  padding-top: 86px;
   padding-bottom: 40px;
 }
 
@@ -199,11 +201,10 @@ a:focus {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 0 14px;
+  padding: 10px 0;
   margin: 0;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: #07021a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   width: 100%;
 }
 
