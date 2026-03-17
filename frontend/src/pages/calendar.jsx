@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getCycles, getLogs, getPrediction, getPatterns, getPhases } from "../services/api";
 import { toIsoDate } from "../utils/date";
 import Calendar from "../components/Calendar";
+import PrettyDate from "../components/PrettyDate";
 
 const PROFILE_ID = null;
 
@@ -93,9 +94,11 @@ export default function CalendarPage() {
           <div>
             <p style={{ margin: 0, fontWeight: 700 }}>Prediction</p>
             <p className="small" style={{ margin: "6px 0 0" }}>
-              Next period: {prediction.next_period_estimate}
+              Next period: {prediction.next_period_estimate ? <PrettyDate value={prediction.next_period_estimate} /> : "—"}
               <br />
-              Window: {prediction.prediction_window_start} → {prediction.prediction_window_end}
+              Window:{" "}
+              {prediction.prediction_window_start ? <PrettyDate value={prediction.prediction_window_start} /> : "—"} →{" "}
+              {prediction.prediction_window_end ? <PrettyDate value={prediction.prediction_window_end} /> : "—"}
             </p>
           </div>
           <div style={{ textAlign: "right" }}>

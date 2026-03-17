@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { addLog } from "../services/api";
-import { formatDate, toIsoDate } from "../utils/date";
+import { toIsoDate } from "../utils/date";
+import PrettyDate from "./PrettyDate";
 
 function clamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
@@ -235,7 +236,9 @@ function DayModal({ date, log, onClose, onSave }) {
   return (
     <div className="modal" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h3>Daily log — {formatDate(date)}</h3>
+        <h3>
+          Daily log — <PrettyDate value={date} />
+        </h3>
 
         <form onSubmit={onSubmit}>
           <div className="section">
@@ -351,11 +354,10 @@ export default function Calendar({ cycles = [], logs = [], phases = [], predicti
   const [futurePhaseInfo, setFuturePhaseInfo] = useState(null);
   const [currentStart, setCurrentStart] = useState(() => {
     const start = new Date();
-    start.setMonth(start.getMonth() - 1);
     start.setDate(1);
     return start;
   });
-  const [monthsToShow, setMonthsToShow] = useState(3);
+  const [monthsToShow] = useState(1);
 
   const logByDate = useMemo(() => {
     const map = new Map();
@@ -643,7 +645,11 @@ export default function Calendar({ cycles = [], logs = [], phases = [], predicti
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginTop: 0 }}>Future day</h3>
             <p className="output" style={{ margin: 0 }}>
-              Probable phase on <strong>{formatDate(futurePhaseInfo.date)}</strong> is{" "}
+              Probable phase on{" "}
+              <strong>
+                <PrettyDate value={futurePhaseInfo.date} />
+              </strong>{" "}
+              is{" "}
               <strong>{phaseTitle(futurePhaseInfo.phase)}</strong>.
             </p>
             <div className="modal-actions">

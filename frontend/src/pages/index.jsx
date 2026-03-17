@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getCycles, getPatterns, getPrediction } from "../services/api";
-import { formatDate, formatRelativeDays } from "../utils/date";
+import { formatRelativeDays } from "../utils/date";
+import PrettyDate from "../components/PrettyDate";
 
 export default function Home() {
   const [prediction, setPrediction] = useState(null);
@@ -95,13 +96,14 @@ export default function Home() {
             <p>
               <strong>Next Period</strong>
               <br />
-              {prediction.next_period_estimate && formatDate(new Date(prediction.next_period_estimate))}
+              {prediction.next_period_estimate ? <PrettyDate value={prediction.next_period_estimate} /> : "—"}
             </p>
 
             <p>
               <strong>Window</strong>
               <br />
-              {prediction.prediction_window_start && formatDate(new Date(prediction.prediction_window_start))} — {prediction.prediction_window_end && formatDate(new Date(prediction.prediction_window_end))}
+              {prediction.prediction_window_start ? <PrettyDate value={prediction.prediction_window_start} /> : "—"} —{" "}
+              {prediction.prediction_window_end ? <PrettyDate value={prediction.prediction_window_end} /> : "—"}
             </p>
 
             <p>

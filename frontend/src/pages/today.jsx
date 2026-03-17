@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getLogs, getPatterns, getPhases, getPrediction } from "../services/api";
-import { formatDate, toIsoDate } from "../utils/date";
+import { toIsoDate } from "../utils/date";
 import { getReminderSettings, setReminderSettings } from "../utils/reminders";
+import PrettyDate from "../components/PrettyDate";
 
 function normalizePhase(p) {
   if (!p) return null;
@@ -184,7 +185,7 @@ export default function TodayPage() {
         <div>
           <h2 style={{ margin: 0 }}>Today</h2>
           <p className="small" style={{ margin: "6px 0 0" }}>
-            {formatDate(today)} · Your daily boyfriend guide
+            <PrettyDate value={today} /> · Your daily boyfriend guide
           </p>
         </div>
         <button className={`button ${reminders.enabled ? "secondary" : ""}`} type="button" onClick={toggleReminders}>
@@ -263,7 +264,9 @@ export default function TodayPage() {
           <div className="grid grid-3">
             <div className="stat">
               <div className="stat__label">Next period</div>
-              <div className="stat__value">{prediction.next_period_estimate || "—"}</div>
+              <div className="stat__value">
+                {prediction.next_period_estimate ? <PrettyDate value={prediction.next_period_estimate} /> : "—"}
+              </div>
             </div>
             <div className="stat">
               <div className="stat__label">Period in</div>

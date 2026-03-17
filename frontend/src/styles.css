@@ -434,8 +434,8 @@ button.badge:focus-visible {
 .days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-  grid-auto-rows: minmax(58px, 1fr);
+  gap: 10px;
+  grid-auto-rows: minmax(66px, 1fr);
 }
 
 .day {
