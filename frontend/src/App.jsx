@@ -12,7 +12,7 @@ function App() {
   return (
     <BrowserRouter>
       <header className="header">
-        <div className="container">
+        <div className="container header__inner">
           <div>
             <h1>Jiya’s Cycle Tracker</h1>
             <p className="subtitle">For Jiya & Preetam — track and learn together.</p>

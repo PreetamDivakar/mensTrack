@@ -33,10 +33,14 @@ function buildMonth(year, month) {
   return days;
 }
 
-function getPhaseForDate(date, cycles, phaseByDate, prediction, today) {
+function getPhaseForDate(date, cycles, phaseByDate, prediction, today, periodDays, currentPeriodStart) {
   if (!date) return { phase: null, predicted: false };
 
   const iso = toIsoDate(date);
+  // If user logged this day as a period day, always show period.
+  if (periodDays && periodDays.has(iso)) {
+    return { phase: "period", predicted: false };
+  }
   if (phaseByDate && phaseByDate.has(iso)) {
     return phaseByDate.get(iso);
   }
@@ -84,37 +88,61 @@ function getPhaseForDate(date, cycles, phaseByDate, prediction, today) {
     }
   }
 
-  // Future dates: use the backend prediction if available, otherwise fall back to lastCycle.
+  // Future dates: prefer the most recent user-confirmed period start if available.
   if (dt > today) {
     const predictedLength = prediction?.predicted_cycle_length ? Math.round(prediction.predicted_cycle_length) : 0;
-    const nextPeriodIso = prediction?.next_period_estimate ? toIsoDate(new Date(prediction.next_period_estimate)) : "";
-    const nextPeriod = nextPeriodIso ? new Date(nextPeriodIso) : null;
+    const predictedNextPeriodIso = prediction?.next_period_estimate
+      ? toIsoDate(new Date(prediction.next_period_estimate))
+      : "";
+
+    const anchor = currentPeriodStart
+      ? new Date(currentPeriodStart)
+      : predictedNextPeriodIso
+        ? new Date(predictedNextPeriodIso)
+        : null;
 
     // Use a reasonable period length hint from recent data; fall back to 5.
     const periodLengthHint = lastCycle?.period_length ?? 5;
     const periodLength = clamp(periodLengthHint, 1, 10);
 
-    if (nextPeriod && predictedLength >= 20) {
-      nextPeriod.setHours(0, 0, 0, 0);
+    if (anchor && predictedLength >= 20) {
+      anchor.setHours(0, 0, 0, 0);
 
-      // Before next predicted period starts, we are in luteal (blue).
-      if (dt < nextPeriod) {
-        return { phase: "luteal", predicted: true };
+      // If the user confirmed a period start, then "period → follicular → ovulation → luteal" begins from that date.
+      if (currentPeriodStart) {
+        const periodEnd = new Date(anchor);
+        periodEnd.setDate(periodEnd.getDate() + periodLength);
+        if (dt >= anchor && dt < periodEnd) {
+          return { phase: "period", predicted: true };
+        }
+
+        const cycleEnd = new Date(anchor);
+        cycleEnd.setDate(cycleEnd.getDate() + predictedLength);
+        if (dt >= anchor && dt < cycleEnd) {
+          const dayIndex = Math.floor((dt - anchor) / (1000 * 60 * 60 * 24));
+          const phase = makePhase(anchor, periodLength, predictedLength, dayIndex);
+          return { phase: phase || "follicular", predicted: true };
+        }
+
+        return { phase: null, predicted: false };
       }
 
+      // Otherwise: before the next predicted period starts, we are in luteal (blue).
+      if (dt < anchor) return { phase: "luteal", predicted: true };
+
       // Predicted period days (red).
-      const periodEnd = new Date(nextPeriod);
+      const periodEnd = new Date(anchor);
       periodEnd.setDate(periodEnd.getDate() + periodLength);
-      if (dt >= nextPeriod && dt < periodEnd) {
+      if (dt >= anchor && dt < periodEnd) {
         return { phase: "period", predicted: true };
       }
 
       // After period starts, follow the next cycle phases using predicted cycle length.
-      const cycleEnd = new Date(nextPeriod);
+      const cycleEnd = new Date(anchor);
       cycleEnd.setDate(cycleEnd.getDate() + predictedLength);
-      if (dt >= nextPeriod && dt < cycleEnd) {
-        const dayIndex = Math.floor((dt - nextPeriod) / (1000 * 60 * 60 * 24));
-        const phase = makePhase(nextPeriod, periodLength, predictedLength, dayIndex);
+      if (dt >= anchor && dt < cycleEnd) {
+        const dayIndex = Math.floor((dt - anchor) / (1000 * 60 * 60 * 24));
+        const phase = makePhase(anchor, periodLength, predictedLength, dayIndex);
         return { phase: phase || "follicular", predicted: true };
       }
     }
@@ -337,6 +365,42 @@ export default function Calendar({ cycles = [], logs = [], phases = [], predicti
     return map;
   }, [logs]);
 
+  const periodDays = useMemo(() => {
+    const set = new Set();
+    logs.forEach((l) => {
+      if (l?.flow_intensity) set.add(l.date);
+    });
+    return set;
+  }, [logs]);
+
+  const currentPeriodStart = useMemo(() => {
+    // Find the most recent continuous run of period days (by flow_intensity).
+    const isoDays = Array.from(periodDays)
+      .map((d) => toIsoDate(d))
+      .sort();
+    if (!isoDays.length) return null;
+
+    const todayIso = toIsoDate(new Date());
+    // last period day not in the future
+    const lastIdx = (() => {
+      for (let i = isoDays.length - 1; i >= 0; i--) {
+        if (isoDays[i] <= todayIso) return i;
+      }
+      return -1;
+    })();
+    if (lastIdx === -1) return null;
+
+    let start = isoDays[lastIdx];
+    for (let i = lastIdx; i > 0; i--) {
+      const cur = new Date(isoDays[i]);
+      const prev = new Date(isoDays[i - 1]);
+      const diff = (cur.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+      if (diff === 1) start = isoDays[i - 1];
+      else break;
+    }
+    return start;
+  }, [periodDays]);
+
   const phaseByDate = useMemo(() => {
     const map = new Map();
     phases.forEach((p) => {
@@ -386,13 +450,29 @@ export default function Calendar({ cycles = [], logs = [], phases = [], predicti
 
   const predictedPeriodWindow = useMemo(() => {
     if (!prediction) return new Set();
+    // If user confirmed a period start, compute next period window from that anchor.
+    if (currentPeriodStart && prediction?.predicted_cycle_length) {
+      const predictedLength = Math.round(prediction.predicted_cycle_length);
+      const next = new Date(currentPeriodStart);
+      next.setDate(next.getDate() + predictedLength);
+      const start = new Date(next);
+      start.setDate(start.getDate() - 2);
+      const end = new Date(next);
+      end.setDate(end.getDate() + 2);
+      return buildIsoRange(toIsoDate(start), toIsoDate(end));
+    }
     return buildIsoRange(prediction.prediction_window_start, prediction.prediction_window_end);
-  }, [prediction]);
+  }, [prediction, currentPeriodStart]);
 
   const predictedNextPeriodIso = useMemo(() => {
-    const iso = prediction?.next_period_estimate ? toIsoDate(new Date(prediction.next_period_estimate)) : "";
-    return iso;
-  }, [prediction]);
+    if (currentPeriodStart && prediction?.predicted_cycle_length) {
+      const predictedLength = Math.round(prediction.predicted_cycle_length);
+      const next = new Date(currentPeriodStart);
+      next.setDate(next.getDate() + predictedLength);
+      return toIsoDate(next);
+    }
+    return prediction?.next_period_estimate ? toIsoDate(new Date(prediction.next_period_estimate)) : "";
+  }, [prediction, currentPeriodStart]);
 
   const earliestAvailableStart = useMemo(() => {
     if (!phases || phases.length === 0) return new Date(1900, 0, 1);
@@ -446,7 +526,15 @@ export default function Calendar({ cycles = [], logs = [], phases = [], predicti
   const handleSelectDay = (date) => {
     // Don't allow creating/editing logs in the future.
     if (date > today) {
-      const { phase, predicted } = getPhaseForDate(date, cycles, phaseByDate, prediction, today);
+      const { phase, predicted } = getPhaseForDate(
+        date,
+        cycles,
+        phaseByDate,
+        prediction,
+        today,
+        periodDays,
+        currentPeriodStart
+      );
       if (predicted && phase) {
         setFuturePhaseInfo({ date, phase });
       }
@@ -497,7 +585,15 @@ export default function Calendar({ cycles = [], logs = [], phases = [], predicti
                 const iso = toIsoDate(day);
                 const isToday = toIsoDate(today) === iso;
                 const isPast = day < today;
-                const { phase, predicted } = getPhaseForDate(day, cycles, phaseByDate, prediction, today);
+                const { phase, predicted } = getPhaseForDate(
+                  day,
+                  cycles,
+                  phaseByDate,
+                  prediction,
+                  today,
+                  periodDays,
+                  currentPeriodStart
+                );
                 const log = logByDate.get(iso);
                 const isPredictedPeriodWindow = predictedPeriodWindow.has(iso);
                 const isPredictedNextPeriod = predictedNextPeriodIso && iso === predictedNextPeriodIso;
