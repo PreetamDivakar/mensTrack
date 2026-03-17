@@ -1,6 +1,7 @@
 import uuid
 
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -63,7 +64,7 @@ class DailyLog(Base):
 
     __tablename__ = "daily_logs"
 
-    id = Column(String, primary_key=True, default=generate_uuid)
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     profile_id = Column(String, nullable=True)
     date = Column(Date, nullable=False, index=True)
     mood = Column(String, nullable=True)
@@ -80,7 +81,7 @@ class Cycle(Base):
     __tablename__ = "cycles"
 
     # Supabase default table uses UUID primary key.
-    id = Column(String, primary_key=True, default=generate_uuid, index=True)
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
 
     profile_id = Column(String, ForeignKey("profiles.id"), nullable=True)
 
