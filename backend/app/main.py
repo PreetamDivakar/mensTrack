@@ -9,8 +9,6 @@ from sqlalchemy.orm import Session
 from .database import Base, engine, get_db
 from . import services, schemas
 
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
 
 _origins_raw = os.getenv("FRONTEND_ORIGINS", "*")
@@ -32,10 +30,12 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event():
-    # Ensure new columns exist when schema evolves (helps local dev and Supabase deployments).
-    db = next(get_db())
-    # Add any new columns that may not exist yet (useful for evolving schema on hosted DBs).
+    # On platforms like Render, DB connectivity can temporarily fail at boot (DNS/IPv6 routing/etc).
+    # Do not crash the web process before binding the port; instead, best-effort initialize.
     try:
+        Base.metadata.create_all(bind=engine)
+
+        # Add any new columns that may not exist yet (useful for evolving schema on hosted DBs).
         with engine.begin() as conn:
             conn.execute(
                 text(
@@ -58,24 +58,22 @@ def startup_event():
                 )
             )
             # Ensure `mood` is stored as text (not integer) for backwards compatibility.
-            # Some older schemas may have used an integer mood value.
             conn.execute(
                 text(
                     "ALTER TABLE IF EXISTS daily_logs ALTER COLUMN mood TYPE TEXT USING mood::text;"
                 )
             )
-    except Exception:
-        # Ignore failures during schema migration attempts.
-        pass
 
-    # Seed initial cycle data from the provided dataset on first run.
-    services.seed_cycles_from_csv(db)
-
-    # Normalize stored cycles (fix bad cycle_length values) and keep predictions accurate.
-    services.normalize_cycles(db)
-
-    # Train or refresh the persisted prediction model based on seeded data.
-    services.train_model_from_db(db)
+        db = next(get_db())
+        # Seed initial cycle data from the provided dataset on first run.
+        services.seed_cycles_from_csv(db)
+        # Normalize stored cycles (fix bad cycle_length values) and keep predictions accurate.
+        services.normalize_cycles(db)
+        # Train or refresh the persisted prediction model based on seeded data.
+        services.train_model_from_db(db)
+    except Exception as e:
+        # Don't prevent the server from starting; endpoints will error until DB connectivity is fixed.
+        print(f"[startup] DB initialization skipped: {e}")
 
 
 @app.get("/")
