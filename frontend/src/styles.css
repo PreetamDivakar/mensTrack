@@ -201,7 +201,10 @@ a:focus {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 0;
+  padding-top: 30px;
+  padding-bottom: 25px;
+  padding-left: 0;
+  padding-right: 0;
   margin: 0;
   background: #07021a;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
