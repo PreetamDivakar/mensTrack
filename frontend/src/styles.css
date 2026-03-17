@@ -437,6 +437,32 @@ button.badge:focus-visible {
   flex: 1;
 }
 
+/* Mobile: avoid forcing a big square that overflows the viewport */
+@media (max-width: 520px) {
+  .month {
+    width: 100%;
+    aspect-ratio: auto;
+  }
+
+  .days {
+    gap: 8px;
+    grid-auto-rows: minmax(54px, 1fr);
+  }
+
+  .day {
+    padding: 8px 6px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .days {
+    gap: 6px;
+    grid-auto-rows: minmax(48px, 1fr);
+  }
+}
+
 .day {
   position: relative;
   padding: 10px 8px;
