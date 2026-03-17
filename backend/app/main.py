@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional
 
-from fastapi import FastAPI, Depends, Query
+from fastapi import FastAPI, Depends, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -178,5 +178,9 @@ def get_phases(
 @app.post("/seed")
 def seed(profile_id: Optional[str] = Query(None), db: Session = Depends(get_db)):
     """Seed the database from the built-in cycle dataset."""
-    cycles = services.seed_cycles_from_csv(db, profile_id)
-    return {"seeded_cycles": len(cycles)}
+    try:
+        cycles = services.seed_cycles_from_csv(db, profile_id)
+        return {"seeded_cycles": len(cycles)}
+    except Exception as e:
+        # Surface the error to help diagnose DB/schema issues during deployment.
+        raise HTTPException(status_code=500, detail=str(e))
