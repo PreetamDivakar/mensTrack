@@ -400,23 +400,21 @@ button.badge:focus-visible {
 .calendar {
   display: flex;
   gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-  scroll-snap-type: x mandatory;
-  scroll-padding: 18px;
-  scroll-behavior: smooth;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 0;
 }
 
 .month {
-  flex: 0 0 320px;
-  scroll-snap-align: start;
+  width: min(520px, 100%);
+  aspect-ratio: 1 / 1;
   background: rgba(255, 255, 255, 0.10);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--radius);
   padding: 14px;
-  min-width: 260px;
-  max-width: 340px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .month header {
@@ -436,6 +434,7 @@ button.badge:focus-visible {
   grid-template-columns: repeat(7, 1fr);
   gap: 10px;
   grid-auto-rows: minmax(66px, 1fr);
+  flex: 1;
 }
 
 .day {
