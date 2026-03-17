@@ -127,6 +127,7 @@ export default function Home() {
                 style={{ cursor: "pointer", border: "none" }}
                 onClick={() => setShowConfidenceInfo(true)}
                 aria-label="Why irregular and confidence?"
+                title="Click to learn why"
               >
                 Irregular cycle detected
               </button>

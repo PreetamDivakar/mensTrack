@@ -15,7 +15,6 @@ function App() {
         <div className="header__inner">
           <div>
             <h1>Jiya’s Cycle Tracker</h1>
-            <p className="subtitle">For Jiya & Preetam — track and learn together.</p>
           </div>
           <nav className="nav">
             <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>Home</NavLink>

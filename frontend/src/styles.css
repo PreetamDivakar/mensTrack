@@ -201,7 +201,7 @@ a:focus {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 0;
+  padding: 14px 0;
   margin: 0;
   background: #07021a;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
@@ -355,6 +355,25 @@ a:focus {
 .badge.warning {
   background: rgba(251, 113, 133, 0.15);
   color: var(--danger);
+}
+
+/* Make clickable badges feel like nav buttons */
+.badge[role="button"],
+button.badge {
+  transition: all 180ms ease;
+}
+
+.badge[role="button"]:hover,
+button.badge:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.badge[role="button"]:focus-visible,
+button.badge:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
 }
 
 .progress {
